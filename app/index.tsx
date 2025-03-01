@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -144,3 +143,4 @@ const styles = StyleSheet.create({
   receiptImage: { width: 200, height: 200, marginTop: 10 },
   points: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginVertical: 10 },
 });
+
