@@ -1,0 +1,753 @@
+// import React, { useState, useEffect, useCallback } from "react";
+// import {
+//   StyleSheet,
+//   View,
+//   ScrollView,
+//   TouchableOpacity,
+//   Image,
+//   Platform,
+//   StatusBar,
+//   FlatList,
+//   Alert,
+//   useWindowDimensions,
+// } from "react-native";
+// import { useSafeAreaInsets } from "react-native-safe-area-context";
+// import { useRouter } from "expo-router";
+// import * as Haptics from "expo-haptics";
+
+// import { ThemedText } from "@/components/ThemedText";
+// import { ThemedView } from "@/components/ThemedView";
+// import { IconSymbol } from "@/components/ui/IconSymbol";
+// import { useColorScheme } from "@/hooks/useColorScheme";
+// import { Colors } from "@/constants/Colors";
+
+// // Firebase imports
+// import { initializeApp } from "firebase/app";
+// import {
+//   getFirestore,
+//   collection,
+//   doc,
+//   getDoc,
+//   setDoc,
+//   updateDoc,
+//   onSnapshot,
+//   query,
+//   orderBy,
+//   limit,
+//   serverTimestamp,
+//   increment,
+// } from "firebase/firestore";
+// import { getAuth } from "firebase/auth";
+
+// // Initialize Firebase (using placeholder config - replace with your actual config)
+// const firebaseConfig = {
+//   apiKey: "YOUR_API_KEY",
+//   authDomain: "YOUR_PROJECT.firebaseapp.com",
+//   projectId: "YOUR_PROJECT_ID",
+//   storageBucket: "YOUR_PROJECT.appspot.com",
+//   messagingSenderId: "YOUR_SENDER_ID",
+//   appId: "YOUR_APP_ID",
+// };
+
+// // Initialize Firebase app if it hasn't been initialized yet
+// let app;
+// try {
+//   app = initializeApp(firebaseConfig);
+// } catch (error) {
+//   // App already initialized
+//   app = initializeApp(firebaseConfig, "eco-app");
+// }
+
+// const db = getFirestore(app);
+// const auth = getAuth(app);
+
+// export default function HomeScreen() {
+//   const colorScheme = useColorScheme();
+//   const insets = useSafeAreaInsets();
+//   const router = useRouter();
+//   const { width } = useWindowDimensions();
+
+//   // State variables
+//   const [loading, setLoading] = useState(true);
+//   const [userData, setUserData] = useState({
+//     name: "Guest",
+//     points: 0,
+//   });
+//   const [showNotification, setShowNotification] = useState(true);
+//   const [bestSellers, setBestSellers] = useState([
+//     {
+//       id: "1",
+//       name: "Soft Jacket",
+//       points: 250,
+//       image:
+//         "https://cdn.builder.io/api/v1/image/assets/TEMP/8e55h9f9i9i7i4g9h9h6f9d5i9i4i7h9i7i4g9h9h6f9d5i9i4i7h9?placeholderIfAbsent=true",
+//       isFavorite: false,
+//     },
+//     {
+//       id: "2",
+//       name: "Organic cotton pants",
+//       points: 400,
+//       image:
+//         "https://cdn.builder.io/api/v1/image/assets/TEMP/5b22e8c8f8f4f1d8e8e3c8a2f6f1f4e3f8f4f1d8e8e3c8a2f6f1f4e3?placeholderIfAbsent=true",
+//       isFavorite: false,
+//     },
+//     {
+//       id: "3",
+//       name: "Eco Backpack",
+//       points: 320,
+//       image:
+//         "https://cdn.builder.io/api/v1/image/assets/TEMP/6c33f9d9g9g5g2e9f9f4d9b3g7g2g5f9g5g2e9f9f4d9b3g7g2g5f9?placeholderIfAbsent=true",
+//       isFavorite: true,
+//     },
+//     {
+//       id: "4",
+//       name: "Bamboo Toothbrush",
+//       points: 150,
+//       image:
+//         "https://cdn.builder.io/api/v1/image/assets/TEMP/7d44g8e8h8h6h3f8g8g5e8c4h8h3h6g8h6h3f8g8g5e8c4h8h3h6g8?placeholderIfAbsent=true",
+//       isFavorite: false,
+//     },
+//   ]);
+
+//   const [dailyChallenges, setDailyChallenges] = useState([
+//     {
+//       id: "1",
+//       title: "Use a reusable water bottle",
+//       description: "Avoid single-use plastics today!",
+//       points: 50,
+//       icon: "drop.fill",
+//       completed: false,
+//     },
+//     {
+//       id: "2",
+//       title: "Walk or bike instead of driving",
+//       description: "Reduce your carbon footprint",
+//       points: 75,
+//       icon: "figure.walk",
+//       completed: false,
+//     },
+//     {
+//       id: "3",
+//       title: "Eat a plant-based meal",
+//       description: "Reduce your environmental impact",
+//       points: 60,
+//       icon: "leaf.fill",
+//       completed: false,
+//     },
+//   ]);
+
+//   const [currentChallenge, setCurrentChallenge] = useState(dailyChallenges[0]);
+
+//   // Fetch user data from Firebase
+//   useEffect(() => {
+//     const user = auth.currentUser;
+//     if (!user) {
+//       setLoading(false);
+//       return;
+//     }
+
+//     const userRef = doc(db, "users", user.uid);
+//     const unsubscribe = onSnapshot(userRef, (docSnap) => {
+//       if (docSnap.exists()) {
+//         const data = docSnap.data();
+//         setUserData({
+//           name: data.name || "User",
+//           points: data.points || 0,
+//         });
+//       }
+//       setLoading(false);
+//     });
+
+//     return () => unsubscribe();
+//   }, []);
+
+//   // Fetch products from Firebase
+//   useEffect(() => {
+//     const productsRef = collection(db, "products");
+//     const q = query(productsRef, orderBy("popularity", "desc"), limit(4));
+
+//     const unsubscribe = onSnapshot(q, (snapshot) => {
+//       const productsData = snapshot.docs.map((doc) => ({
+//         id: doc.id,
+//         name: doc.data().name,
+//         points: doc.data().pointsCost,
+//         image:
+//           doc.data().imageUrl ||
+//           "https://cdn.builder.io/api/v1/image/assets/TEMP/8e55h9f9i9i7i4g9h9h6f9d5i9i4i7h9i7i4g9h9h6f9d5i9i4i7h9?placeholderIfAbsent=true",
+//         isFavorite: false,
+//       }));
+
+//       if (productsData.length > 0) {
+//         setBestSellers(productsData);
+//       }
+//     });
+
+//     return () => unsubscribe();
+//   }, []);
+
+//   // Fetch challenges from Firebase
+//   useEffect(() => {
+//     const challengesRef = collection(db, "challenges");
+//     const q = query(challengesRef, orderBy("createdAt", "desc"), limit(3));
+
+//     const unsubscribe = onSnapshot(q, (snapshot) => {
+//       const challengesData = snapshot.docs.map((doc) => ({
+//         id: doc.id,
+//         title: doc.data().title,
+//         description: doc.data().description,
+//         points: doc.data().points,
+//         icon: doc.data().icon || "leaf.fill",
+//         completed: false,
+//       }));
+
+//       if (challengesData.length > 0) {
+//         setDailyChallenges(challengesData);
+//         setCurrentChallenge(challengesData[0]);
+//       }
+//     });
+
+//     return () => unsubscribe();
+//   }, []);
+
+//   // Handle toggling favorite status
+//   const toggleFavorite = useCallback((id) => {
+//     if (Platform.OS === "ios") {
+//       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+//     }
+
+//     setBestSellers((prevProducts) =>
+//       prevProducts.map((product) =>
+//         product.id === id
+//           ? { ...product, isFavorite: !product.isFavorite }
+//           : product,
+//       ),
+//     );
+
+//     // In a real app, you would update this in Firebase
+//     const user = auth.currentUser;
+//     if (user) {
+//       const userFavoritesRef = doc(db, "userFavorites", user.uid);
+//       // This is simplified - in a real app you'd check if the document exists first
+//       updateDoc(userFavoritesRef, {
+//         [`products.${id}`]: true,
+//         updatedAt: serverTimestamp(),
+//       }).catch((error) => {
+//         // If document doesn't exist, create it
+//         setDoc(userFavoritesRef, {
+//           [`products.${id}`]: true,
+//           updatedAt: serverTimestamp(),
+//         });
+//       });
+//     }
+//   }, []);
+
+//   // Handle adding to cart
+//   const addToCart = useCallback((product) => {
+//     if (Platform.OS === "ios") {
+//       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+//     }
+
+//     Alert.alert("Add to Cart", `Add ${product.name} to your cart?`, [
+//       {
+//         text: "Cancel",
+//         style: "cancel",
+//       },
+//       {
+//         text: "Add",
+//         onPress: () => {
+//           // In a real app, you would update the cart in Firebase
+//           Alert.alert("Success", `${product.name} added to cart!`);
+//         },
+//       },
+//     ]);
+//   }, []);
+
+//   // Handle starting a challenge
+//   const startChallenge = useCallback(
+//     (challenge) => {
+//       if (Platform.OS === "ios") {
+//         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+//       }
+
+//       Alert.alert(
+//         "Start Challenge",
+//         `Start the "${challenge.title}" challenge?`,
+//         [
+//           {
+//             text: "Cancel",
+//             style: "cancel",
+//           },
+//           {
+//             text: "Start",
+//             onPress: () => {
+//               // Navigate to challenge screen
+//               router.push({
+//                 pathname: "/impact",
+//                 params: { challengeId: challenge.id },
+//               });
+//             },
+//           },
+//         ],
+//       );
+//     },
+//     [router],
+//   );
+
+//   // Handle navigation to all products
+//   const navigateToAllProducts = useCallback(() => {
+//     if (Platform.OS === "ios") {
+//       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+//     }
+//     router.push("/explore");
+//   }, [router]);
+
+//   // Handle navigation to eco items
+//   const navigateToEcoItems = useCallback(() => {
+//     if (Platform.OS === "ios") {
+//       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+//     }
+//     router.push("/explore");
+//   }, [router]);
+
+//   // Render product item
+//   const renderProductItem = useCallback(
+//     ({ item }) => (
+//       <ThemedView
+//         style={[
+//           styles.productCard,
+//           { backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5" },
+//         ]}
+//       >
+//         <View style={styles.actionButtons}>
+//           <TouchableOpacity
+//             style={[
+//               styles.actionButton,
+//               { backgroundColor: colorScheme === "dark" ? "#444" : "#fff" },
+//             ]}
+//             onPress={() => addToCart(item)}
+//             activeOpacity={0.7}
+//           >
+//             <IconSymbol
+//               name="cart.fill"
+//               size={16}
+//               color={colorScheme === "dark" ? "#fff" : Colors.light.tint}
+//             />
+//           </TouchableOpacity>
+//           <TouchableOpacity
+//             style={[
+//               styles.actionButton,
+//               { backgroundColor: colorScheme === "dark" ? "#444" : "#fff" },
+//             ]}
+//             onPress={() => toggleFavorite(item.id)}
+//             activeOpacity={0.7}
+//           >
+//             <IconSymbol
+//               name={item.isFavorite ? "heart.fill" : "heart"}
+//               size={16}
+//               color={
+//                 item.isFavorite
+//                   ? "#ff3b30"
+//                   : colorScheme === "dark"
+//                     ? "#fff"
+//                     : "#666"
+//               }
+//             />
+//           </TouchableOpacity>
+//         </View>
+
+//         <Image
+//           source={{ uri: item.image }}
+//           style={styles.productImage}
+//           resizeMode="cover"
+//         />
+
+//         <ThemedText style={styles.productPoints}>{item.points} pts</ThemedText>
+
+//         <ThemedText
+//           style={styles.productName}
+//           lightColor="#666"
+//           darkColor="#aaa"
+//         >
+//           {item.name}
+//         </ThemedText>
+//       </ThemedView>
+//     ),
+//     [colorScheme, addToCart, toggleFavorite],
+//   );
+
+//   return (
+//     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+//       <StatusBar
+//         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
+//       />
+
+//       {/* Header */}
+//       <View style={styles.header}>
+//         <ThemedText style={styles.headerTime}>
+//           {new Date().getHours().toString().padStart(2, "0")}:
+//           {new Date().getMinutes().toString().padStart(2, "0")}
+//         </ThemedText>
+//         <View style={styles.headerIcons}>
+//           <IconSymbol
+//             name="wifi"
+//             size={16}
+//             color={colorScheme === "dark" ? "#fff" : "#000"}
+//           />
+//           <IconSymbol
+//             name="battery.100"
+//             size={16}
+//             color={colorScheme === "dark" ? "#fff" : "#000"}
+//           />
+//           <IconSymbol
+//             name="antenna.radiowaves.left.and.right"
+//             size={16}
+//             color={colorScheme === "dark" ? "#fff" : "#000"}
+//           />
+//         </View>
+//       </View>
+
+//       <ScrollView
+//         style={styles.scrollView}
+//         contentContainerStyle={[
+//           styles.scrollContent,
+//           { paddingBottom: insets.bottom + 80 },
+//         ]}
+//         showsVerticalScrollIndicator={false}
+//       >
+//         {/* Best Sellers Section */}
+//         <View style={styles.sectionHeader}>
+//           <ThemedText style={styles.sectionTitle}>Best Seller</ThemedText>
+//           <TouchableOpacity onPress={navigateToAllProducts} activeOpacity={0.7}>
+//             <ThemedText
+//               style={styles.viewAll}
+//               lightColor="#666"
+//               darkColor="#aaa"
+//             >
+//               view all
+//             </ThemedText>
+//           </TouchableOpacity>
+//         </View>
+
+//         <FlatList
+//           data={bestSellers}
+//           renderItem={renderProductItem}
+//           keyExtractor={(item) => item.id}
+//           horizontal
+//           showsHorizontalScrollIndicator={false}
+//           contentContainerStyle={styles.productGrid}
+//           ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
+//         />
+
+//         {/* Notification Banner */}
+//         {showNotification && (
+//           <ThemedView
+//             style={[
+//               styles.notificationBanner,
+//               {
+//                 backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5",
+//               },
+//             ]}
+//           >
+//             <View style={styles.notificationContent}>
+//               <IconSymbol
+//                 name="checkmark.circle.fill"
+//                 size={24}
+//                 color="#4CAF50"
+//               />
+//               <View style={styles.notificationText}>
+//                 <ThemedText style={styles.notificationTitle}>
+//                   Great job!
+//                 </ThemedText>
+//                 <ThemedText style={styles.notificationPoints}>
+//                   +50 points!
+//                 </ThemedText>
+//               </View>
+//             </View>
+//             <TouchableOpacity
+//               onPress={() => setShowNotification(false)}
+//               hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+//             >
+//               <ThemedText
+//                 style={styles.closeButton}
+//                 lightColor="#666"
+//                 darkColor="#aaa"
+//               >
+//                 ×
+//               </ThemedText>
+//             </TouchableOpacity>
+//           </ThemedView>
+//         )}
+
+//         {/* Eco Button */}
+//         <TouchableOpacity
+//           style={[
+//             styles.ecoButton,
+//             {
+//               backgroundColor:
+//                 colorScheme === "dark" ? Colors.dark.tint : Colors.light.tint,
+//             },
+//           ]}
+//           onPress={navigateToEcoItems}
+//           activeOpacity={0.8}
+//         >
+//           <ThemedText style={styles.ecoButtonText}>Browse eco-items</ThemedText>
+//         </TouchableOpacity>
+
+//         {/* Challenges Section */}
+//         <View style={styles.challengesSection}>
+//           <ThemedText style={styles.challengesSectionTitle}>
+//             Daily Challenges
+//           </ThemedText>
+
+//           <ThemedView
+//             style={[
+//               styles.challengeCard,
+//               {
+//                 backgroundColor: colorScheme === "dark" ? "#2a2a2a" : "#f5f5f5",
+//               },
+//             ]}
+//           >
+//             <View
+//               style={[
+//                 styles.challengeIcon,
+//                 {
+//                   backgroundColor:
+//                     colorScheme === "dark"
+//                       ? Colors.dark.tint
+//                       : Colors.light.tint,
+//                 },
+//               ]}
+//             >
+//               <IconSymbol name={currentChallenge.icon} size={20} color="#fff" />
+//             </View>
+
+//             <View style={styles.challengeContent}>
+//               <ThemedText style={styles.challengeTitle}>
+//                 {currentChallenge.title}
+//               </ThemedText>
+//               <ThemedText
+//                 style={styles.challengeSubtext}
+//                 lightColor="#666"
+//                 darkColor="#aaa"
+//               >
+//                 {currentChallenge.description}
+//               </ThemedText>
+//             </View>
+
+//             <View style={styles.pointsBadge}>
+//               <ThemedText style={styles.pointsBadgeText}>
+//                 +{currentChallenge.points} pts
+//               </ThemedText>
+//             </View>
+//           </ThemedView>
+
+//           <TouchableOpacity
+//             style={[
+//               styles.startChallengeButton,
+//               {
+//                 backgroundColor:
+//                   colorScheme === "dark" ? Colors.dark.tint : Colors.light.tint,
+//               },
+//             ]}
+//             onPress={() => startChallenge(currentChallenge)}
+//             activeOpacity={0.8}
+//           >
+//             <ThemedText style={styles.startChallengeButtonText}>
+//               Start Challenge
+//             </ThemedText>
+//           </TouchableOpacity>
+//         </View>
+//       </ScrollView>
+//     </ThemedView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//   },
+//   scrollView: {
+//     flex: 1,
+//   },
+//   scrollContent: {
+//     padding: 20,
+//   },
+//   header: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     paddingHorizontal: 20,
+//     paddingVertical: 10,
+//     alignItems: "center",
+//   },
+//   headerTime: {
+//     fontWeight: "500",
+//   },
+//   headerIcons: {
+//     flexDirection: "row",
+//     gap: 5,
+//   },
+//   sectionHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     marginBottom: 20,
+//   },
+//   sectionTitle: {
+//     fontSize: 18,
+//     fontWeight: "600",
+//   },
+//   viewAll: {
+//     fontSize: 14,
+//   },
+//   productGrid: {
+//     paddingBottom: 10,
+//   },
+//   productCard: {
+//     borderRadius: 12,
+//     padding: 15,
+//     width: 160,
+//     height: 200,
+//     position: "relative",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 2,
+//   },
+//   actionButtons: {
+//     flexDirection: "row",
+//     gap: 10,
+//     marginBottom: 10,
+//   },
+//   actionButton: {
+//     borderRadius: 50,
+//     width: 32,
+//     height: 32,
+//     alignItems: "center",
+//     justifyContent: "center",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 2,
+//     elevation: 1,
+//   },
+//   productImage: {
+//     width: 130,
+//     height: 100,
+//     borderRadius: 8,
+//     marginBottom: 10,
+//   },
+//   productPoints: {
+//     fontWeight: "500",
+//     marginBottom: 5,
+//   },
+//   productName: {
+//     fontSize: 14,
+//   },
+//   notificationBanner: {
+//     borderRadius: 12,
+//     padding: 15,
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     marginBottom: 20,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 2,
+//   },
+//   notificationContent: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 10,
+//   },
+//   notificationText: {
+//     justifyContent: "center",
+//   },
+//   notificationTitle: {
+//     fontWeight: "500",
+//   },
+//   notificationPoints: {
+//     fontSize: 14,
+//   },
+//   closeButton: {
+//     fontSize: 20,
+//   },
+//   ecoButton: {
+//     padding: 15,
+//     borderRadius: 12,
+//     marginBottom: 20,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 2,
+//   },
+//   ecoButtonText: {
+//     color: "white",
+//     textAlign: "center",
+//     fontWeight: "500",
+//   },
+//   challengesSection: {
+//     marginTop: 10,
+//   },
+//   challengesSectionTitle: {
+//     fontWeight: "600",
+//     marginBottom: 15,
+//     fontSize: 18,
+//   },
+//   challengeCard: {
+//     borderRadius: 12,
+//     padding: 15,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     position: "relative",
+//     marginBottom: 15,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 2,
+//   },
+//   challengeIcon: {
+//     borderRadius: 50,
+//     width: 40,
+//     height: 40,
+//     alignItems: "center",
+//     justifyContent: "center",
+//     marginRight: 15,
+//   },
+//   challengeContent: {
+//     flex: 1,
+//   },
+//   challengeTitle: {
+//     fontWeight: "500",
+//     marginBottom: 5,
+//   },
+//   challengeSubtext: {
+//     fontSize: 14,
+//   },
+//   pointsBadge: {
+//     position: "absolute",
+//     right: 15,
+//     top: 15,
+//   },
+//   pointsBadgeText: {
+//     fontWeight: "500",
+//   },
+//   startChallengeButton: {
+//     padding: 15,
+//     borderRadius: 12,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 2,
+//   },
+//   startChallengeButtonText: {
+//     color: "white",
+//     textAlign: "center",
+//     fontWeight: "500",
+//   },
+// });
